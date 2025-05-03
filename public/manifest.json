@@ -1,19 +1,32 @@
 {
     "manifest_version": 3,
-    "name": "My TSUP App",
+    "name": "Quora Title Copier",
     "version": "0.1.0",
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "scripting"
+    ],
+    "host_permissions": [
+        "*://*.quora.com/*"
+    ],
     "background": {
-      "service_worker": "background.js"
+        "service_worker": "background.js"
     },
-    "content_scripts": [{
-      "matches": ["*://*.quora.com/*"],
-      "js": ["content.js"]
-    }],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.quora.com/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
     "action": {
-      "default_popup": "popup.html"
+        "default_popup": "popup.html"
     },
     "options_ui": {
-      "page": "options.html"
+        "page": "options.html"
     }
-  }
-  
+}

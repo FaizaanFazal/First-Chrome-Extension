@@ -7,6 +7,8 @@
     "moduleResolution": "Node",
     "strict": true,
 
+    "lib": ["DOM", "ES2020"],  
+    "types": ["chrome"],       
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true

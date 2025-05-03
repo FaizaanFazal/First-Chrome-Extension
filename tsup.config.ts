@@ -1,32 +1,38 @@
-// tsup.config.ts
 import { defineConfig } from 'tsup';
 import copy from 'esbuild-plugin-copy';
 
 export default defineConfig({
-  entry: [
-    'src/background.ts',
-    'src/content.ts',
-    'src/popup/index.tsx',
-    'src/options/index.tsx',
-  ],
+  // Nested entries → dist/popup/index.js, dist/options/index.js, etc.
+  entry: {
+    background:      'src/background.ts',
+    content:         'src/content.ts',
+    'popup/index':   'src/popup/index.tsx',
+    'options/index': 'src/options/index.tsx',
+  },
+
   outDir: 'dist',
   clean: true,
-  format: ['cjs'],
+
+  platform: 'browser',
+  bundle: true,
+  noExternal: ['react', 'react-dom', 'react-dom/client'],
+
+  format: ['esm'],     
+  splitting: false, 
   sourcemap: true,
-  splitting: false,
-  watch: process.env.NODE_ENV === 'development',
+  outExtension() {    
+    return { js: '.js' };
+  },
+
   esbuildPlugins: [
     copy({
       assets: [
-        // your manifest & HTML files
-        { from: 'public/manifest.json', to: '.' },
-        { from: 'public/popup.html',    to: '.' },
-        { from: 'public/options.html',  to: '.' },
-        
-        // icons
-        { from: 'public/icons/*',       to: 'icons/[name][ext]' },
+        { from: 'public/manifest.json',  to: '.' },
+        { from: 'public/popup.html',     to: '.' },
+        { from: 'public/options.html',   to: '.' },
+        { from: 'public/icons/*',        to: 'icons/[name][ext]' },
       ],
       verbose: true,
-    })
+    }),
   ],
 });
