@@ -7,7 +7,7 @@ export default defineConfig({
     'src/background.ts',
     'src/content.ts',
     'src/popup/index.tsx',
-    // …other entries
+    'src/options/index.tsx',
   ],
   outDir: 'dist',
   clean: true,
@@ -18,9 +18,15 @@ export default defineConfig({
   esbuildPlugins: [
     copy({
       assets: [
-        { from: 'public/**/*', to: '.' }, 
+        // your manifest & HTML files
+        { from: 'public/manifest.json', to: '.' },
+        { from: 'public/popup.html',    to: '.' },
+        { from: 'public/options.html',  to: '.' },
+        
+        // icons
+        { from: 'public/icons/*',       to: 'icons/[name][ext]' },
       ],
-      verbose: true,  
+      verbose: true,
     })
   ],
 });
