@@ -1,9 +1,8 @@
-// src/popup/index.tsx
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 async function fetchQuestions(): Promise<string[]> {
-  // 1. Grab the active tab
+
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const activeTab = tabs[0];
 
@@ -26,38 +25,56 @@ async function fetchQuestions(): Promise<string[]> {
 
 function Popup() {
   const [titles, setTitles] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [fontSize, setFontSize] = useState<number>(14);
 
   useEffect(() => {
-    fetchQuestions()
-      .then(setTitles)
-      .catch((err) => {
-        console.error(err);
-        setTitles([]);
-      })
-      .finally(() => setLoading(false));
+    chrome.storage.local.get({ fontSize: 14 }, (items) => {
+      setFontSize(items.fontSize);
+    });
   }, []);
 
-  if (loading) {
-    return <div style={{ padding: 12 }}>Loading…</div>;
-  }
-  if (titles.length === 0) {
-    return <div style={{ padding: 12 }}>No questions found. Habibi</div>;
-  }
+
+  useEffect(() => {
+    chrome.storage.local.set({ fontSize });
+  }, [fontSize]);
+
+  const onFetch = async () => {
+    setLoading(true);
+    try {
+      const qs = await fetchQuestions();
+      setTitles(qs);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const adjustFont = (delta: number) => {
+    setFontSize((fs) => Math.max(10, Math.min(32, fs + delta)));
+  };
 
   return (
-    <div style={{ padding: 12, fontFamily: 'sans-serif', width: 300 }}>
-      <h2>Questions on this page</h2>
-      <ul style={{ maxHeight: 400, overflowY: 'auto' }}>
-        {titles.map((t, i) => (
-          <li key={i}>{t}</li>
-        ))}
-      </ul>
+    <div style={{ padding: 12, fontFamily: 'sans-serif', width: 320 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <button onClick={() => adjustFont(-2)} disabled={fontSize <= 10}>A⁻</button>
+        <button onClick={onFetch}>Fetch Questions</button>
+        <button onClick={() => adjustFont(2)} disabled={fontSize >= 32}>A⁺</button>
+      </div>
+
+      {loading ? (
+        <div>Loading…</div>
+      ) : titles.length === 0 ? (
+        <div>No questions yet. Click “Fetch Questions.”</div>
+      ) : (
+        <ul style={{ fontSize: `${fontSize}px`, maxHeight: 400, overflowY: 'auto', paddingLeft: 16 }}>
+          {titles.map((t, i) => (
+            <li key={i} style={{ marginBottom: 6 }}>{t}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 const container = document.getElementById('root');
-if (container) {
-  createRoot(container).render(<Popup />);
-}
+if (container) createRoot(container).render(<Popup />);
