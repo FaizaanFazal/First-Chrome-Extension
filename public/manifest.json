@@ -6,22 +6,20 @@
         "activeTab",
         "tabs",
         "scripting",
-        "storage"
+        "storage",
+        "webNavigation"
     ],
     "host_permissions": [
-        "*://*.quora.com/*"
+        "*://*.quora.com/*",
+        "*://quora.com/*"
     ],
     "background": {
         "service_worker": "background.js"
     },
     "content_scripts": [
         {
-            "matches": [
-                "*://*.quora.com/*"
-            ],
-            "js": [
-                "content.js"
-            ]
+            "matches": ["*://*.quora.com/*", "*://quora.com/*"],
+            "js": ["content.js"]
         }
     ],
     "action": {
