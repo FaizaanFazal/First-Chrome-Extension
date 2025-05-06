@@ -2,11 +2,11 @@
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.webNavigation.onHistoryStateUpdated.addListener(
-    (details) => {
+    details => {
       if (/^https:\/\/(www\.)?quora\.com/.test(details.url)) {
         chrome.scripting.executeScript({
           target: { tabId: details.tabId },
-          files: ['content.js'],
+          files: ['content.js']
         });
       }
     },
@@ -14,7 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
       url: [
         { hostEquals: 'quora.com', schemes: ['https'] },
         { hostEquals: 'www.quora.com', schemes: ['https'] },
-      ],
+      ]
     }
   );
 });

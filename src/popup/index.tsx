@@ -1,77 +1,95 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-async function fetchQuestions(): Promise<string[]> {
+type QuestionItem = { title: string; href: string; };
 
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const activeTab = tabs[0];
-
-  const tabId = activeTab?.id;
-  if (typeof tabId !== 'number') {
+async function fetchQuestions(): Promise<QuestionItem[]> {
+  // const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  // const activeTab = tabs[0];
+  
+  // const tabId = activeTab?.id;
+  // if (typeof tabId !== 'number') {
+  //   console.warn('No valid tab ID—cannot send message');
+  //   return [];
+  // }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) {
     console.warn('No valid tab ID—cannot send message');
     return [];
   }
+  const tabId = tab.id;
 
+  // 2. Ask content script for { items: QuestionItem[] }
   return new Promise((resolve) => {
     chrome.tabs.sendMessage(
       tabId,
       { type: 'GET_QUESTION_LIST' },
-      (response: { titles: string[] }) => {
-        resolve(response?.titles ?? []);
+      (response: { items: QuestionItem[] }) => {
+        if (chrome.runtime.lastError) {
+          console.warn('[Popup] messaging error:', chrome.runtime.lastError.message);
+          resolve([]);
+        } else {
+          resolve(response.items || []);
+        }
       }
     );
   });
 }
 
 function Popup() {
-  const [titles, setTitles] = useState<string[]>([]);
+  const [items, setItems] = useState<QuestionItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [fontSize, setFontSize] = useState<number>(14);
-
-  useEffect(() => {
-    chrome.storage.local.get({ fontSize: 14 }, (items) => {
-      setFontSize(items.fontSize);
-    });
-  }, []);
-
-
-  useEffect(() => {
-    chrome.storage.local.set({ fontSize });
-  }, [fontSize]);
 
   const onFetch = async () => {
     setLoading(true);
     try {
-      const qs = await fetchQuestions();
-      setTitles(qs);
+      const list = await fetchQuestions();
+      setItems(list);
     } finally {
       setLoading(false);
     }
   };
 
-  const adjustFont = (delta: number) => {
-    setFontSize((fs) => Math.max(10, Math.min(32, fs + delta)));
+  const openQuestion = (href: string) => {
+    chrome.tabs.create({ url: href });
   };
 
   return (
     <div style={{ padding: 12, fontFamily: 'sans-serif', width: 320 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <button onClick={() => adjustFont(-2)} disabled={fontSize <= 10}>A⁻</button>
-        <button onClick={onFetch}>Fetch Questions</button>
-        <button onClick={() => adjustFont(2)} disabled={fontSize >= 32}>A⁺</button>
-      </div>
+      <button onClick={onFetch} style={{ marginBottom: 8 }}>
+        Fetch Questions
+      </button>
 
-      {loading ? (
-        <div>Loading…</div>
-      ) : titles.length === 0 ? (
+      {loading && <div>Loading…</div>}
+      {!loading && items.length === 0 && (
         <div>No questions yet. Click “Fetch Questions.”</div>
-      ) : (
-        <ul style={{ fontSize: `${fontSize}px`, maxHeight: 400, overflowY: 'auto', paddingLeft: 16 }}>
-          {titles.map((t, i) => (
-            <li key={i} style={{ marginBottom: 6 }}>{t}</li>
-          ))}
-        </ul>
       )}
+
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {items.map((item, i) => (
+          <li key={i} style={{ marginBottom: 6 }}>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                openQuestion(item.href);
+              }}
+              style={{
+                textDecoration: 'none',
+                color: '#0366d6',
+                display: 'block',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+              }}
+              title={item.title}
+            >
+              {item.title}
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
